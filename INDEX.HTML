@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales & Expense Analysis Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            overflow-x: hidden;
+            font-size: 14px;
+        }
+
+        .marquee-container {
+            width: 100%;
+            overflow: hidden;
+            background: #1e3c72;
+            padding: 8px 0;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .marquee-text {
+            white-space: nowrap;
+            display: inline-block;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            animation: marquee 20s linear infinite;
+            padding-left: 100%;
+        }
+
+        @keyframes marquee {
+            0%   { transform: translateX(0%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header p {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .control-group:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .control-group h3 {
+            color: #2c3e50;
+            font-size: 1.1em;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .input-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .input-row label {
+            font-weight: 600;
+            color: #34495e;
+            flex: 1;
+            font-size: 0.95em;
+        }
+        
+        .input-row input {
+            width: 120px;
+            padding: 8px 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 6px;
+            text-align: right;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .input-row input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .chart-section {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 450px;
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-arrows {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .arrow {
+            position: absolute;
+            font-size: 12px;
+            font-weight: bold;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            border: 2px solid #3498db;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .arrow::before {
+            content: '';
+            width: 0;
+            height: 0;
+            border-style: solid;
+        }
+        
+        .sales-arrow {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .sales-arrow::before {
+            border-width: 5px 0 5px 8px;
+            border-color: transparent transparent transparent #3498db;
+        }
+        
+        .expenses-arrow {
+            top: 25%;
+            right: 19%;
+            transform: translateY(-50%);
+        }
+        
+        .expenses-arrow::before {
+            border-width: 5px 8px 5px 0;
+            border-color: transparent #e74c3c transparent transparent;
+        }
+        
+        .expenses-arrow {
+            border-color: #e74c3c;
+            color: #c0392b;
+        }
+        
+        .chart-info {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .legend {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .legend h3 {
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 1em;
+        }
+        
+        .legend-group {
+            margin-bottom: 15px;
+        }
+        
+        .legend-group h4 {
+            color: #34495e;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .legend-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .legend-item span {
+            font-size: 0.85em;
+            color: #2c3e50;
+        }
+        
+        .summary {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .summary h3 {
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 1em;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .summary-item {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .summary-item:hover {
+            transform: scale(1.05);
+        }
+        
+        .summary-item .value {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #1976d2;
+            margin-bottom: 4px;
+        }
+        
+        .summary-item .label {
+            font-size: 0.8em;
+            color: #555;
+        }
+        
+        .profit-analysis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .profit-item {
+            background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #4caf50;
+        }
+        
+        .profit-item.negative {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            border-color: #f44336;
+        }
+        
+        .profit-item .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+        
+        .profit-item .value.positive {
+            color: #2e7d32;
+        }
+        
+        .profit-item .value.negative {
+            color: #c62828;
+        }
+        
+        .profit-item .label {
+            font-size: 1.5em;
+            color: #666;
+        }
+        
+        @media (max-width: 1024px) {
+            .chart-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 400px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 15px;
+            }
+            
+            .header {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.6em;
+            }
+            
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="marquee-container">
+        <div class="marquee-text">Transmission Line Product / Sales vs Expense Analysis / 2024-2025</div>
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>Sales & Expense Analysis Wheel</h1>
+            <p>Dashboard for metal sales and expense tracking</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="controls">
+                <div class="control-group">
+                    <h3>💰 Sales Data (₹)</h3>
+                    <div class="input-row">
+                        <label>Copper (CU) Sales:</label>
+                        <input type="number" id="salesCU" value="23" step="0.01">
+                    </div>
+                    <div class="input-row">
+                        <label>Iron (FE) Sales:</label>
+                        <input type="number" id="salesFE" value="21" step="0.01">
+                    </div>
+                    <div class="input-row">
+                        <label>Aluminum (AL) Sales:</label>
+                        <input type="number" id="salesAL" value="8" step="0.01">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>🔧 Job Work & Materials (₹)</h3>
+                    <div class="input-row">
+                        <label>CU Job Work:</label>
+                        <input type="number" id="jobWorkCU" value="17" step="0.01">
+                    </div>
+                    <div class="input-row">
+                        <label>FE Job Work:</label>
+                        <input type="number" id="jobWorkFE" value="19" step="0.01">
+                    </div>
+                    <div class="input-row">
+                        <label>AL Job Work:</label>
+                        <input type="number" id="jobWorkAL" value="4" step="0.01">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>📊 Fixed Expenses (₹)</h3>
+                    <div class="input-row">
+                        <label>Fixed Expenses:</label>
+                        <input type="number" id="fixedExpense" value="4" step="0.01">
+                    </div>
+                    <div class="input-row">
+                        <label>Other Variable:</label>
+                        <input type="number" id="otherVariable" value="1" step="0.01">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-section">
+                <div class="chart-container">
+                    <div class="chart-arrows">
+                        <div class="arrow sales-arrow">
+                            💰 Sales
+                        </div>
+                        <div class="arrow expenses-arrow">
+                            📊 Expenses
+                        </div>
+                    </div>
+                    <canvas id="combinedChart"></canvas>
+                </div>
+                
+                <div class="chart-info">
+                    <div class="legend">
+                        <h3>📈 Chart Legend</h3>
+                        <div class="legend-group">
+                            <h4>Sales (Inner Circle)</h4>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #ac4f00;"></div>
+                                <span>Copper Sales</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #999e98;"></div>
+                                <span>Iron Sales</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #eff4f8;"></div>
+                                <span>Aluminum Sales</span>
+                            </div>
+                        </div>
+                        
+                        <div class="legend-group">
+                            <h4>Expenses (Outer Ring)</h4>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #d5750a;"></div>
+                                <span>CU Job Work</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #191919;"></div>
+                                <span>FE Job Work</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #a3a7a9;"></div>
+                                <span>AL Job Work</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #8fce00;"></div>
+                                <span>Fixed Expenses</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #ae1919;"></div>
+                                <span>Other Variable</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="summary">
+                        <h3>📊 Summary</h3>
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <div class="value" id="totalSales">₹0</div>
+                                <div class="label">Total Sales</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="value" id="totalExpense">₹0</div>
+                                <div class="label">Total Expenses</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="profit-analysis">
+                <div class="profit-item" id="bestPerformingItem">
+                    <div class="value" id="bestPerforming">-</div>
+                    <div class="label">Best Performing Metal</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chart;
+        
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
+        }
+        
+        function updateChart() {
+            // Get sales data
+            const salesCU = parseFloat(document.getElementById('salesCU').value) || 0;
+            const salesFE = parseFloat(document.getElementById('salesFE').value) || 0;
+            const salesAL = parseFloat(document.getElementById('salesAL').value) || 0;
+            
+            // Get expense data
+            const jobWorkCU = parseFloat(document.getElementById('jobWorkCU').value) || 0;
+            const jobWorkFE = parseFloat(document.getElementById('jobWorkFE').value) || 0;
+            const jobWorkAL = parseFloat(document.getElementById('jobWorkAL').value) || 0;
+            const fixedExpense = parseFloat(document.getElementById('fixedExpense').value) || 0;
+            const otherVariable = parseFloat(document.getElementById('otherVariable').value) || 0;
+            
+            // Calculate totals
+            const totalSales = salesCU + salesFE + salesAL;
+            const totalJobWork = jobWorkCU + jobWorkFE + jobWorkAL;
+            const totalExpense = fixedExpense + otherVariable + totalJobWork;
+            
+            // Find best performing metal
+            const metalProfits = [
+                { name: 'Copper', profit: salesCU - jobWorkCU },
+                { name: 'Iron', profit: salesFE - jobWorkFE },
+                { name: 'Aluminum', profit: salesAL - jobWorkAL }
+            ];
+            const bestMetal = metalProfits.reduce((best, current) => 
+                current.profit > best.profit ? current : best
+            );
+            
+            // Update summary
+            document.getElementById('totalSales').textContent = formatCurrency(totalSales);
+            document.getElementById('totalExpense').textContent = formatCurrency(totalExpense);
+            
+            // Update best performing metal
+            document.getElementById('bestPerforming').textContent = bestMetal.name;
+            
+            // Sales data for inner pie (filter out zero values)
+            const salesData = [];
+            const salesLabels = [];
+            const salesColors = [];
+            
+            if (salesCU > 0) {
+                salesData.push(salesCU);
+                salesLabels.push('Copper Sales');
+                salesColors.push('#ac4f00');
+            }
+            if (salesFE > 0) {
+                salesData.push(salesFE);
+                salesLabels.push('Iron Sales');
+                salesColors.push('#999e98');
+            }
+            if (salesAL > 0) {
+                salesData.push(salesAL);
+                salesLabels.push('Aluminum Sales');
+                salesColors.push('#eff4f8');
+            }
+            
+            // Expense data for outer donut (filter out zero values)
+            const expenseData = [];
+            const expenseLabels = [];
+            const expenseColors = [];
+            
+            if (jobWorkCU > 0) {
+                expenseData.push(jobWorkCU);
+                expenseLabels.push('CU Job Work');
+                expenseColors.push('#d5750a');
+            }
+            if (jobWorkFE > 0) {
+                expenseData.push(jobWorkFE);
+                expenseLabels.push('FE Job Work');
+                expenseColors.push('#191919');
+            }
+            if (jobWorkAL > 0) {
+                expenseData.push(jobWorkAL);
+                expenseLabels.push('AL Job Work');
+                expenseColors.push('#a3a7a9');
+            }
+            if (fixedExpense > 0) {
+                expenseData.push(fixedExpense);
+                expenseLabels.push('Fixed Expenses');
+                expenseColors.push('#8fce00');
+            }
+            if (otherVariable > 0) {
+                expenseData.push(otherVariable);
+                expenseLabels.push('Other Variable');
+                expenseColors.push('#ae1919');
+            }
+            
+            if (chart) {
+                chart.destroy();
+            }
+            
+            const ctx = document.getElementById('combinedChart').getContext('2d');
+            
+            const datasets = [];
+            
+            // Add sales dataset if there's data
+            if (salesData.length > 0) {
+                datasets.push({
+                    data: salesData,
+                    backgroundColor: salesColors,
+                    borderWidth: 3,
+                    borderColor: '#fff',
+                    radius: '80%',
+                    cutout: 0,
+                    label: 'Sales'
+                });
+            }
+            
+            // Add expense dataset if there's data
+            if (expenseData.length > 0) {
+                datasets.push({
+                    data: expenseData,
+                    backgroundColor: expenseColors,
+                    borderWidth: 3,
+                    borderColor: '#fff',
+                    radius: '100%',
+                    cutout: '75%',
+                    label: 'Expenses'
+                });
+            }
+            
+            chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#fff',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    const datasetIndex = context.datasetIndex;
+                                    const labels = datasetIndex === 0 ? salesLabels : expenseLabels;
+                                    const label = labels[context.dataIndex];
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${formatCurrency(value)} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true,
+                        duration: 1000
+                    }
+                }
+            });
+        }
+        
+        // Add event listeners to all inputs
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('input', updateChart);
+        });
+        
+        // Initialize chart
+        updateChart();
+    </script>
+</body>
+</html>
